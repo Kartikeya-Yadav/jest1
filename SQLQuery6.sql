@@ -57,6 +57,12 @@ create table Hotel_Services(
 	Price decimal(10, 2)
 );
 
+create table Hotel_ServiceBooking(
+	ServiceBooking int identity(1,1) primary key,
+	ServiceId int,
+	BookingId int
+);
+
 create table Hotel_HotelBranch(
 	BranchId int primary key,
 	BranchName varchar(50),
@@ -127,13 +133,21 @@ left join Hotel_Employee as man on emp.ManagerId = man.EmployeeId;
 -- Rooms that never booked.
 select Hotel_Rooms.RoomId, Hotel_Rooms.RoomType, Hotel_Rooms.PricePerNight
 from Hotel_Rooms
-left join Hotel_Bookings on  Hotel_Rooms.RoomId = Hotel_Bookings.RoomId
-where Hotel_Bookings.RoomId = null;
+left join Hotel_Bookings on Hotel_Rooms.RoomId = Hotel_Bookings.RoomId
+where Hotel_Bookings.RoomId is null;
 
-
+select *
+from Hotel_Bookings;
 -- 3. Subquries.
 
 -- Customers with multiple bookings.
+select CustomerId, Name, Email
+from Hotel_Customers
+where CustomerId in (
+    select CustomerId
+    from Hotel_Bookings
+    group by CustomerId
+    having count(BookingId) > 1);
 
 
 -- Most Expencive Room booked.
@@ -210,6 +224,37 @@ select dbo.fn_CalculateTotalDays(1);
 
 
 --7. Triggers 
+create trigger trg_Booking
+on Hotel_Bookings
+instead of insert
+as
+begin
+    if exists (
+        select 1 
+        from Hotel_Rooms r
+        join inserted i on r.RoomId = i.RoomId
+        where r.Status = 'Available'
+    )
+    begin
+        insert into Hotel_Bookings (CustomerId, RoomId, CheckInDate, CheckOutDate, TotalAmount)
+        select CustomerId, RoomId, CheckInDate, CheckOutDate, TotalAmount
+        from inserted;
+
+        update Hotel_Rooms
+        set Status = 'NotAvailable'
+        where RoomId in (select RoomId from inserted);
+
+        print 'Booking Successful!';
+    end
+    else
+    begin
+        print 'Room is not available!';
+    end
+end;
+
+insert into Hotel_Bookings (CustomerId, RoomId, CheckInDate, CheckOutDate, TotalAmount) values
+(1, 101, '2025-01-01', '2025-01-05', 2000.00);
+
 create trigger trg_CalceleBooking
 on Hotel_Bookings
 instead of delete
