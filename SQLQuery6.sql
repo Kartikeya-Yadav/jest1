@@ -51,6 +51,20 @@ create table Hotel_Employee(
 	Foreign key (ManagerId) references Hotel_Employee(EmployeeId)
 );
 
+create table Hotel_Services(
+	ServiceId int primary key,
+	ServiceName varchar(50),
+	Price decimal(10, 2)
+);
+
+create table Hotel_HotelBranch(
+	BranchId int primary key,
+	BranchName varchar(50),
+	LocationDecription varchar(100)
+);
+
+
+
 
 -- 1. Data Insertion
 
@@ -89,6 +103,13 @@ insert into Hotel_Employee (EmployeeId, Name, Position, Salary, HireDate, Manage
 (4, 'Auysh Koli', 'Chef', 35000.00, '2022-04-01', 1),
 (5, 'Lavanya Satpute', 'Security', 30000.00, '2022-05-01', 1);
 
+insert into Hotel_HotelBranch (BranchId, BranchName, LocationDecription) values
+(1, 'Mumbai Central', 'Near Central Station, Mumbai'),
+(2, 'Pune West', 'Next to Pune University, Pune'),
+(3, 'Kohapur', 'Mahalakshi Temple, Rankala Lake, Mountans,Kohapur'),
+(4, 'Chennai Beach', 'Close to Marina Beach, Chennai'),
+(5, 'Navi Mumbai', 'Near Flemingo point Beach, Navi Mumbai');
+
 
 -- 2. Quries using joins.
 
@@ -113,6 +134,7 @@ where Hotel_Bookings.RoomId = null;
 -- 3. Subquries.
 
 -- Customers with multiple bookings.
+
 
 -- Most Expencive Room booked.
 select *
@@ -187,4 +209,33 @@ end;
 select dbo.fn_CalculateTotalDays(1);
 
 
--- Triggers 
+--7. Triggers 
+create trigger trg_CalceleBooking
+on Hotel_Bookings
+instead of delete
+as 
+begin
+	update Hotel_Rooms
+	set Status = 'Available'
+	where RoomId = (select RoomId from deleted);
+	print 'Booking Calceled !';
+end;
+
+delete 
+from Hotel_Bookings
+where BookingId = 1;
+
+
+
+-- 10. Full Text Search
+select * from Hotel_HotelBranch
+where LocationDecription like '%Beach%';
+
+exec sp_help Hotel_HotelBranch;
+
+create fulltext index on Hotel_HotelBranch(LocationDecription)
+key index PK__Hotel_Ho__A1682FC5A06E1382;
+
+select * from Hotel_HotelBranch
+where contains(LocationDecription, 'Beach');
+
