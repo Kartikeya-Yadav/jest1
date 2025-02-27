@@ -11,30 +11,6 @@ exec sp_help employee_k;
 set statistics io on;
 set statistics time on;
 
--- Create table without index and primary key
-CREATE TABLE EmployeeIndexExample (
-    EmployeeID INT,
-    FirstName VARCHAR(50),
-    LastName VARCHAR(50),
-    Email VARCHAR(100),
-    DepartmentID INT
-);
-
---Add random values
-DECLARE @i INT = 1;
-WHILE @i <= 50
-BEGIN
-    INSERT INTO EmployeeIndexExample (EmployeeID, FirstName, LastName, Email, DepartmentID)
-    VALUES (
-        @i,
-        'FirstName' + SUBSTRING(CONVERT(VARCHAR(50), NEWID()), 1, 5),
-        'LastName' + SUBSTRING(CONVERT(VARCHAR(50), NEWID()), 1, 5),
-        'employee' + CAST(@i AS VARCHAR(10)) + SUBSTRING(CONVERT(VARCHAR(50), NEWID()), 1, 3) + '@example.com',
-        ABS(CHECKSUM(NEWID())) % 10 + 1 -- Random department between 1 and 10
-    );
-    SET @i = @i + 1;
-END;
-
 select * from EmployeeIndexExample;
 
 select *
